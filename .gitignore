@@ -1,0 +1,35 @@
+# --- Rust / Cargo ---
+# Directorio de compilación de Cargo (debug y release).
+/target
+# Copias de seguridad que deja rustfmt al reescribir ficheros.
+**/*.rs.bk
+# Símbolos de depuración de Windows (no aplica a Linux, pero es inocuo).
+*.pdb
+
+# Dependencias vendorizadas con `cargo vendor` para empaquetado offline.
+# Son artefactos generados: descomenta esta línea si prefieres versionarlas
+# para construir sin red.
+/vendor
+
+# --- Ajustes locales de la aplicación ---
+# config.rs escribe ficheros temporales (*.tmp) y conserva una copia del
+# settings.toml corrupto (*.toml.corrupt) en XDG_CONFIG_HOME.
+*.tmp
+*.toml.corrupt
+
+# --- Empaquetado (makepkg / Arch Linux) ---
+# `makepkg` genera el directorio de paquete y los tarballs resultantes.
+/pkg/
+*.pkg.tar.*
+/pomodoro-timer-*.tar.gz
+
+# --- Editores / IDE ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- Sistema operativo ---
+.DS_Store
+Thumbs.db

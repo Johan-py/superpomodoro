@@ -1,0 +1,29 @@
+[package]
+name = "pomodoro-timer"
+version = "0.1.0"
+edition = "2021"
+description = "Reloj Pomodoro minimalista y ligero para Linux (GTK4)"
+license = "MIT"
+authors = ["Pomodoro Timer contributors"]
+
+[[bin]]
+name = "pomodoro-timer"
+path = "src/main.rs"
+
+[dependencies]
+# Interfaz gráfica nativa. GTK 4.10+ habilita gtk::FileDialog (diálogo nativo
+# que en Wayland delega en xdg-desktop-portal).
+gtk4 = { version = "0.11", features = ["v4_10"] }
+
+# Audio: decodificación (wav/ogg/mp3/flac) y salida por el servidor de sonido.
+rodio = { version = "0.20", default-features = false, features = ["wav", "vorbis", "mp3", "flac"] }
+
+# Persistencia de ajustes.
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+
+[profile.release]
+opt-level = "s"   # prioriza tamaño/arranque; sobrado para esta carga
+lto = true
+codegen-units = 1
+strip = true

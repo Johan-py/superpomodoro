@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Pomodoro
+GenericName=Temporizador Pomodoro
+GenericName[en]=Pomodoro Timer
+Comment=Reloj Pomodoro minimalista para Linux
+Comment[en]=Minimalist Pomodoro clock for Linux
+Exec=pomodoro-timer
+Icon=io.github.pomodoro.PomodoroTimer
+Terminal=false
+Categories=Utility;
+Keywords=pomodoro;temporizador;timer;productividad;productivity;
+StartupNotify=true
+StartupWMClass=io.github.pomodoro.PomodoroTimer

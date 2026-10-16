@@ -1,0 +1,137 @@
+# Integración continua: garantiza la estabilidad ejecutando en cada push a
+# `main` y en cada pull request las mismas comprobaciones documentadas en
+# AGENTS.md y README.md:
+#
+#   - `cargo clippy --all-targets -- -D warnings`  (los avisos son errores)
+#   - `cargo test`                                 (pruebas unitarias)
+#   - `cargo build --release`                      (perfil LTO + strip)
+#
+# Además:
+#   - ejecuta la ruta real de audio sin abrir ventana (`--audio-test`) sobre un
+#     dispositivo ALSA nulo, para verificar la reproducción de forma headless;
+#   - compila y prueba sobre el objetivo real del proyecto (Arch Linux), con los
+#     mismos paquetes que declara el PKGBUILD.
+#
+# Todo se construye con `--locked` para respetar Cargo.lock (reproducibilidad).
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Cancela ejecuciones obsoletas de la misma rama: ahorra minutos y evita que
+# resultados antiguos sustituyan a los recientes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Análisis estático. AGENTS.md exige que Clippy esté limpio; aquí se bloquea
+  # cualquier regresión.
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Clippy
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      # GTK >= 4.10 es obligatorio (gtk::FileDialog). Ubuntu 24.04 trae GTK 4.14.
+      # libasound2-dev cubre la dependencia de ALSA (rodio -> cpal).
+      - name: Instalar dependencias del sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-4-dev libasound2-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Clippy (avisos como errores)
+        run: cargo clippy --all-targets --locked -- -D warnings
+
+  # ---------------------------------------------------------------------------
+  # Núcleo de la garantía de estabilidad: las pruebas unitarias existentes
+  # (timer, config, audio, theme y ui) deben pasar.
+  # ---------------------------------------------------------------------------
+  test:
+    name: Pruebas unitarias
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar dependencias del sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-4-dev libasound2-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: cargo test
+        run: cargo test --locked
+
+  # ---------------------------------------------------------------------------
+  # Perfil de publicación y verificación de audio headless.
+  # ---------------------------------------------------------------------------
+  build:
+    name: Compilación release + audio
+    runs-on: ubuntu-24.04
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar dependencias del sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libgtk-4-dev libasound2-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: cargo build --release
+        run: cargo build --release --locked
+
+      # En el CI no hay tarjeta de sonido: se enruta ALSA a un dispositivo nulo
+      # para poder ejecutar la ruta real de audio (bip + carillón) sin ventana.
+      # El comando devuelve un código distinto de cero si el audio falla.
+      - name: Verificación de audio headless (--audio-test)
+        run: |
+          printf 'pcm.!default { type null }\nctl.!default { type null }\n' > "$RUNNER_TEMP/asound.conf"
+          ALSA_CONFIG_PATH="$RUNNER_TEMP/asound.conf" ./target/release/pomodoro-timer --audio-test
+
+  # ---------------------------------------------------------------------------
+  # Prueba sobre el objetivo real: Arch Linux + gtk4 + alsa-lib, los mismos
+  # paquetes del PKGBUILD. Detecta dependencias que falten en el destino.
+  # ---------------------------------------------------------------------------
+  arch:
+    name: Arch Linux (objetivo)
+    runs-on: ubuntu-24.04
+    container: archlinux:latest
+    steps:
+      - name: Instalar dependencias del PKGBUILD
+        run: |
+          pacman -Sy --noconfirm --needed archlinux-keyring
+          pacman -Su --noconfirm
+          pacman -S --noconfirm --needed git rust gtk4 alsa-lib pkgconf
+
+      - uses: actions/checkout@v4
+
+      - name: Pruebas y compilación release en Arch
+        run: |
+          cargo test --locked
+          cargo build --release --locked

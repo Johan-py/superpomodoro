@@ -5,6 +5,8 @@ interfaz minimalista. Escrito en **Rust + GTK4**, funciona en **Wayland** y
 **X11**, usa **sonidos locales** (sin Internet) y guarda sus ajustes siguiendo
 la **XDG Base Directory Specification**.
 
+[![CI](https://github.com/Johan-py/superpomodoro/actions/workflows/ci.yml/badge.svg)](https://github.com/Johan-py/superpomodoro/actions/workflows/ci.yml)
+
 ![Temporizador en marcha](docs/screenshots/timer-running.png)
 
 | Sesión completada | Ajustes | Acoloreado |
@@ -252,6 +254,12 @@ Wayland, diálogos nativos, reproducción de audio y mantenibilidad en Arch.
 cargo test          # 33 pruebas unitarias
 cargo clippy --all-targets -- -D warnings
 ```
+
+Estas mismas comprobaciones se ejecutan automáticamente en cada push a `main` y
+en cada *pull request* mediante GitHub Actions
+([`ci.yml`](.github/workflows/ci.yml)), que además compila el perfil `--release`,
+verifica la ruta real de audio sin ventana (`--audio-test`) y repite pruebas y
+compilación sobre el objetivo real (Arch Linux).
 
 Cubren, entre otros:
 

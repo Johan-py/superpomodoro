@@ -1,8 +1,10 @@
 # AGENTS.md
 
 Single Rust + GTK4 desktop app. The crate lives in `pomodoro-timer/`; run all
-`cargo`/`make` commands from there. There is no git repo, lib target, CI, or
-`opencode.json`. User-facing docs live in `pomodoro-timer/README.md`.
+`cargo`/`make` commands from there. There is no lib target or `opencode.json`.
+CI lives in `.github/workflows/ci.yml` (clippy, tests, release build, headless
+audio check, and an Arch Linux job mirroring the PKGBUILD deps). User-facing docs
+live in `pomodoro-timer/README.md`.
 
 ## Commands
 
